@@ -1,5 +1,5 @@
 import streamlit as st
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 import pandas as pd
 from supabase import create_client, Client
 
@@ -17,7 +17,8 @@ supabase: Client = init_connection()
 
 # Función para guardar el registro en la nube
 def guardar_registro(fecha, hora_entrada, laboratorio, actividades, evidencia_url):
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    zona_mx = timezone(timedelta(hours=-6))
+    timestamp = datetime.now(zona_mx).strftime("%Y-%m-%d %H:%M:%S")
     datos = {
         "fecha": fecha,
         "hora_entrada": hora_entrada,
@@ -76,7 +77,8 @@ with tab1:
                 
                 # Proceso de subida de imagen a la nube
                 if archivo_evidencia is not None:
-                    timestamp_archivo = datetime.now().strftime("%Y%m%d_%H%M%S")
+                    zona_mx = timezone(timedelta(hours=-6))
+                    timestamp_archivo = datetime.now(zona_mx).strftime("%Y%m%d_%H%M%S")
                     nombre_guardado = f"{timestamp_archivo}_{archivo_evidencia.name}"
                     
                     # Convertir el archivo a bytes para subirlo
