@@ -130,7 +130,7 @@ with tab2:
             st.dataframe(df_mostrar, width='stretch', hide_index=True)
             
             st.write("### 🖼️ Ver Evidencias")
-            registros_con_foto = df_registros[df_registros['Archivo Evidencia'] != 'Sin evidencia']
+            registros_con_foto = df_mostrar[df_mostrar['Archivo Evidencia'] != 'Sin evidencia']
             
             if not registros_con_foto.empty:
                 opciones_fotos = registros_con_foto['Archivo Evidencia'].tolist()
