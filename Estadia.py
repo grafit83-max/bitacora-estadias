@@ -98,7 +98,7 @@ with tab1:
 with tab2:
     st.write("### Área Exclusiva para Administrador")
     
-    contrasena_admin = "admin123" 
+    contrasena_admin = "M0r@1355" 
     
     if "pwd_admin" not in st.session_state:
         st.session_state["pwd_admin"] = ""
