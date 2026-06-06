@@ -1,5 +1,5 @@
 import streamlit as st
-from datetime import datetime, timedelta, timezone
+from datetime import datetime
 import pandas as pd
 from supabase import create_client, Client
 
@@ -15,139 +15,217 @@ def init_connection():
 
 supabase: Client = init_connection()
 
-# Función para guardar el registro en la nube
-def guardar_registro(fecha, hora_entrada, laboratorio, actividades, evidencia_url):
-    zona_mx = timezone(timedelta(hours=-6))
-    timestamp = datetime.now(zona_mx).strftime("%Y-%m-%d %H:%M:%S")
+
+# --- FUNCIONES PRINCIPALES ---
+
+def guardar_registro(fecha, hora_entrada, hora_salida, laboratorio, actividades, evidencia_url):
+    """Inserta un nuevo registro en la tabla 'registros' de Supabase."""
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     datos = {
         "fecha": fecha,
         "hora_entrada": hora_entrada,
+        "hora_salida": hora_salida,
         "laboratorio": laboratorio,
         "actividades": actividades,
         "evidencia": evidencia_url,
         "timestamp_registro": timestamp
     }
-    supabase.table("registros").insert(datos).execute()
+    try:
+        supabase.table("registros").insert(datos).execute()
+        return True, None
+    except Exception as e:
+        return False, str(e)
 
-# Función para cargar datos de la nube
+
 def cargar_datos():
-    respuesta = supabase.table("registros").select("*").order("id", desc=True).execute()
-    # Convertir la respuesta a DataFrame de Pandas
-    if respuesta.data:
-        return pd.DataFrame(respuesta.data)
-    else:
-        return pd.DataFrame()
+    """Carga todos los registros desde Supabase y los devuelve como DataFrame."""
+    try:
+        respuesta = supabase.table("registros").select("*").order("id", desc=True).execute()
+        if respuesta.data:
+            return pd.DataFrame(respuesta.data), None
+        else:
+            return pd.DataFrame(), None
+    except Exception as e:
+        return pd.DataFrame(), str(e)
 
-# Función para cerrar sesión
+
+def subir_evidencia(archivo):
+    """Sube una imagen al bucket 'evidencias' y devuelve su URL pública."""
+    try:
+        timestamp_archivo = datetime.now().strftime("%Y%m%d_%H%M%S")
+        nombre_guardado = f"{timestamp_archivo}_{archivo.name}"
+        file_bytes = archivo.getvalue()
+
+        supabase.storage.from_("evidencias").upload(
+            path=nombre_guardado,
+            file=file_bytes,
+            file_options={"content-type": archivo.type}
+        )
+
+        url_publica = supabase.storage.from_("evidencias").get_public_url(nombre_guardado)
+        return url_publica, None
+    except Exception as e:
+        return None, str(e)
+
+
 def cerrar_sesion():
+    """Limpia la contraseña del estado de sesión."""
     st.session_state["pwd_admin"] = ""
 
-# Interfaz principal
+
+# --- INTERFAZ PRINCIPAL ---
+
 st.title("📓 Control de Estadías")
 st.subheader("Estudiante: Ricardo Salas Nava")
 st.info("Horario asignado: **13:00 hrs a 19:00 hrs**")
 
 tab1, tab2 = st.tabs(["📝 Nuevo Registro", "🔐 Historial y Exportación (Admin)"])
 
+
+# ==================== TAB 1: NUEVO REGISTRO ====================
 with tab1:
     with st.form("registro_form", clear_on_submit=True):
         st.write("### Captura de jornada")
-        
+
         col1, col2 = st.columns(2)
         with col1:
-            fecha = st.date_input("Fecha")
-            hora_entrada = st.time_input("Hora de Entrada", value=datetime.strptime("13:00", "%H:%M").time())
-            
+            fecha = st.date_input("Fecha", value=datetime.now().date())
+            hora_entrada = st.time_input(
+                "Hora de Entrada",
+                value=datetime.now().time().replace(second=0, microsecond=0)
+            )
         with col2:
-            laboratorio = st.selectbox("Laboratorio de turno", ["Laboratorio 104", "Laboratorio 204", "Laboratorio 211", "Laboratorio 212"])
-        
-        actividades = st.text_area("Actividades Realizadas", height=150, 
-                                   placeholder="1. Revisión de equipos...\n2. Mantenimiento a...\n3. Asistencia en...")
-        
+            laboratorio = st.selectbox(
+                "Laboratorio de turno",
+                ["Laboratorio 104", "Laboratorio 204", "Laboratorio 211", "Laboratorio 212"]
+            )
+            hora_salida = st.time_input(
+                "Hora de Salida",
+                value=datetime.now().time().replace(second=0, microsecond=0)
+            )
+
+        actividades = st.text_area(
+            "Actividades Realizadas",
+            height=150,
+            placeholder="1. Revisión de equipos...\n2. Mantenimiento a...\n3. Asistencia en..."
+        )
+
         st.write("### Evidencia Fotográfica")
-        archivo_evidencia = st.file_uploader("Sube una foto de tu trabajo (Opcional)", type=['png', 'jpg', 'jpeg'])
-        
+        archivo_evidencia = st.file_uploader(
+            "Sube una foto de tu trabajo (Opcional)",
+            type=['png', 'jpg', 'jpeg']
+        )
+
         submit_button = st.form_submit_button(label="Guardar Registro Diario")
-        
+
         if submit_button:
+            # Validaciones
             if actividades.strip() == "":
                 st.error("Por favor, describe las actividades realizadas antes de guardar.")
+            elif len(actividades.strip()) < 20:
+                st.error("Por favor describe las actividades con más detalle (mínimo 20 caracteres).")
+            elif hora_salida <= hora_entrada:
+                st.error("La hora de salida debe ser mayor a la hora de entrada.")
             else:
                 url_evidencia = "Sin evidencia"
-                
-                # Proceso de subida de imagen a la nube
-                if archivo_evidencia is not None:
-                    zona_mx = timezone(timedelta(hours=-6))
-                    timestamp_archivo = datetime.now(zona_mx).strftime("%Y%m%d_%H%M%S")
-                    nombre_guardado = f"{timestamp_archivo}_{archivo_evidencia.name}"
-                    
-                    # Convertir el archivo a bytes para subirlo
-                    file_bytes = archivo_evidencia.getvalue()
-                    
-                    # Subir al bucket 'evidencias'
-                    supabase.storage.from_("evidencias").upload(
-                        path=nombre_guardado, 
-                        file=file_bytes, 
-                        file_options={"content-type": archivo_evidencia.type}
-                    )
-                    
-                    # Extraer el link público
-                    url_evidencia = supabase.storage.from_("evidencias").get_public_url(nombre_guardado)
-                
-                guardar_registro(fecha.strftime("%Y-%m-%d"), hora_entrada.strftime("%H:%M"), laboratorio, actividades, url_evidencia)
-                st.success("¡Registro guardado exitosamente en la nube!")
 
+                # Subida de imagen
+                if archivo_evidencia is not None:
+                    with st.spinner("Subiendo evidencia fotográfica..."):
+                        url_evidencia, error_upload = subir_evidencia(archivo_evidencia)
+                    if error_upload:
+                        st.warning(f"No se pudo subir la foto, pero el registro se guardará sin evidencia. Error: {error_upload}")
+                        url_evidencia = "Sin evidencia"
+
+                # Guardar registro
+                with st.spinner("Guardando registro..."):
+                    exito, error_guardado = guardar_registro(
+                        fecha.strftime("%Y-%m-%d"),
+                        hora_entrada.strftime("%H:%M"),
+                        hora_salida.strftime("%H:%M"),
+                        laboratorio,
+                        actividades,
+                        url_evidencia
+                    )
+
+                if exito:
+                    st.success("¡Registro guardado exitosamente en la nube!")
+                else:
+                    st.error(f"Error al guardar el registro: {error_guardado}")
+
+
+# ==================== TAB 2: HISTORIAL ADMIN ====================
 with tab2:
     st.write("### Área Exclusiva para Administrador")
-    
-    contrasena_admin = "M0r@1355" 
-    
+
+    # 🔐 Contraseña movida a st.secrets — agrega ADMIN_PASSWORD en tu archivo secrets.toml
+    contrasena_admin = st.secrets["ADMIN_PASSWORD"]
+
     if "pwd_admin" not in st.session_state:
         st.session_state["pwd_admin"] = ""
-    
-    st.text_input("Ingresa la contraseña para ver y exportar los registros:", type="password", key="pwd_admin")
-    
+
+    st.text_input(
+        "Ingresa la contraseña para ver y exportar los registros:",
+        type="password",
+        key="pwd_admin"
+    )
+
     if st.session_state["pwd_admin"] == contrasena_admin:
         col_msg, col_btn = st.columns([0.8, 0.2])
         with col_msg:
             st.success("Acceso concedido.")
         with col_btn:
             st.button("🚪 Cerrar Sesión", on_click=cerrar_sesion)
-            
-        df_registros = cargar_datos()
-        
-        if not df_registros.empty:
+
+        # Cargar datos con manejo de errores
+        df_registros, error_carga = cargar_datos()
+
+        if error_carga:
+            st.error(f"Error al cargar los registros: {error_carga}")
+        elif not df_registros.empty:
+
             st.write("### 📊 Asistencia por Laboratorio")
             conteo_labs = df_registros['laboratorio'].value_counts()
             st.bar_chart(conteo_labs)
-            
+
             st.write("---")
             st.write("### 📋 Tabla de Registros")
-            
-            df_mostrar = df_registros.rename(columns={
-                'id': 'ID', 'fecha': 'Fecha', 'hora_entrada': 'Entrada', 
-                'laboratorio': 'Laboratorio', 'actividades': 'Actividades', 
-                'evidencia': 'Archivo Evidencia', 'timestamp_registro': 'Capturado el'
-            })
-            st.dataframe(df_mostrar, width='stretch', hide_index=True)
-            
+
+            # Renombrar columnas para visualización
+            columnas_rename = {
+                'id': 'ID',
+                'fecha': 'Fecha',
+                'hora_entrada': 'Entrada',
+                'hora_salida': 'Salida',
+                'laboratorio': 'Laboratorio',
+                'actividades': 'Actividades',
+                'evidencia': 'Archivo Evidencia',
+                'timestamp_registro': 'Capturado el'
+            }
+            # Solo renombrar columnas que existan en el DataFrame
+            columnas_presentes = {k: v for k, v in columnas_rename.items() if k in df_registros.columns}
+            df_mostrar = df_registros.rename(columns=columnas_presentes)
+
+            st.dataframe(df_mostrar, use_container_width=True, hide_index=True)
+
+            # Visualización de evidencias fotográficas
             st.write("### 🖼️ Ver Evidencias")
             registros_con_foto = df_mostrar[df_mostrar['Archivo Evidencia'] != 'Sin evidencia']
-            
+
             if not registros_con_foto.empty:
                 opciones_fotos = registros_con_foto['Archivo Evidencia'].tolist()
                 foto_seleccionada = st.selectbox("Selecciona un enlace de imagen para ver:", opciones_fotos)
-                
                 if foto_seleccionada:
-                    st.image(foto_seleccionada, width='stretch')
+                    st.image(foto_seleccionada, use_container_width=True)
             else:
                 st.info("Aún no hay fotografías subidas.")
 
             st.write("---")
-            
+
+            # Exportación a CSV
             df_para_excel = df_mostrar.copy()
             df_para_excel.insert(0, "Estudiante", "Ricardo Salas Nava")
-            
+
             csv = df_para_excel.to_csv(index=False).encode('utf-8-sig')
             st.download_button(
                 label="📥 Descargar todo a Excel",
@@ -157,6 +235,6 @@ with tab2:
             )
         else:
             st.info("Aún no hay registros en la base de datos de la nube.")
-            
+
     elif st.session_state["pwd_admin"] != "":
         st.error("Contraseña incorrecta. Acceso denegado.")
