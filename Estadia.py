@@ -158,7 +158,7 @@ with tab1:
 with tab2:
     st.write("### Área Exclusiva para Administrador")
 
-    # 🔐 Contraseña movida a st.secrets — agrega ADMIN_PASSWORD en tu archivo secrets.toml
+   
     contrasena_admin = st.secrets["ADMIN_PASSWORD"]
 
     if "pwd_admin" not in st.session_state:
