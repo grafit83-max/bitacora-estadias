@@ -14,12 +14,6 @@ def init_connection():
     return create_client(url, key)
 
 supabase: Client = init_connection()
-# DEBUG TEMPORAL — quitar después
-try:
-    test = supabase.table("registros").select("id").limit(1).execute()
-    st.sidebar.success(f"Conexión OK: {test.data}")
-except Exception as e:
-    st.sidebar.error(f"Error conexión: {e}")
 
 # --- FUNCIONES PRINCIPALES ---
 
