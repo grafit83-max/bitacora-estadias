@@ -40,9 +40,7 @@ def guardar_registro(fecha, hora_entrada, hora_salida, laboratorio, actividades,
 def cargar_datos():
     """Carga todos los registros desde Supabase y los devuelve como DataFrame."""
     try:
-        respuesta = supabase.table("registros").select(
-            "id, fecha, hora_entrada, hora_salida, laboratorio, actividades, evidencia, timestamp_registro"
-        ).execute()
+        respuesta = supabase.table("registros").select("*").execute()
         if respuesta.data:
             df = pd.DataFrame(respuesta.data)
             df = df.sort_values("id", ascending=False).reset_index(drop=True)
