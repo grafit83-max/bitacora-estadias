@@ -125,6 +125,7 @@ with tab1:
                 st.error("Por favor, describe las actividades realizadas antes de guardar.")
             elif len(actividades.strip()) < 20:
                 st.error("Por favor describe las actividades con más detalle (mínimo 20 caracteres).")
+            st.write(f"DEBUG — Entrada: {hora_entrada} | Salida: {hora_salida}")
             elif hora_salida <= hora_entrada:
                 st.error("La hora de salida debe ser mayor a la hora de entrada.")
             else:
