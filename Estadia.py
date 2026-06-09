@@ -1,5 +1,5 @@
 import streamlit as st
-from datetime import datetime, time
+from datetime import datetime, time, timezone, timedelta
 import pandas as pd
 from supabase import create_client, Client
 
@@ -19,7 +19,8 @@ supabase: Client = init_connection()
 
 def guardar_registro(fecha, hora_entrada, hora_salida, laboratorio, actividades, evidencia_url):
     """Inserta un nuevo registro en la tabla 'registros' de Supabase."""
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    tz_mexico = timezone(timedelta(hours=-6))
+    timestamp = datetime.now(tz_mexico).strftime("%Y-%m-%d %H:%M:%S")
     datos = {
         "fecha": fecha,
         "hora_entrada": hora_entrada,
