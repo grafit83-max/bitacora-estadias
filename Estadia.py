@@ -1,5 +1,5 @@
 import streamlit as st
-from datetime import datetime
+from datetime import datetime, time
 import pandas as pd
 from supabase import create_client, Client
 
@@ -93,7 +93,7 @@ with tab1:
             fecha = st.date_input("Fecha", value=datetime.now().date())
             hora_entrada = st.time_input(
                 "Hora de Entrada",
-                value=datetime.now().time().replace(second=0, microsecond=0)
+                value=time(13, 0)  # Inicia en 13:00 (hora de entrada asignada)
             )
         with col2:
             laboratorio = st.selectbox(
@@ -102,7 +102,7 @@ with tab1:
             )
             hora_salida = st.time_input(
                 "Hora de Salida",
-                value=datetime.now().time().replace(second=0, microsecond=0)
+                value=time(19, 0)  # Inicia en 19:00 (hora de salida asignada)
             )
 
         actividades = st.text_area(
@@ -119,18 +119,16 @@ with tab1:
 
         submit_button = st.form_submit_button(label="Guardar Registro Diario")
 
-      if submit_button:
-    # Validaciones
-    if actividades.strip() == "":
-        st.error("Por favor, describe las actividades realizadas antes de guardar.")
-    elif len(actividades.strip()) < 20:
-        st.error("Por favor describe las actividades con más detalle (mínimo 20 caracteres).")
-    else:
-        st.write(f"DEBUG — Entrada: {hora_entrada} | Salida: {hora_salida}")
-        if hora_salida <= hora_entrada:
-            st.error("La hora de salida debe ser mayor a la hora de entrada.")
-        else:
-            url_evidencia = "Sin evidencia"
+        if submit_button:
+            # Validaciones
+            if actividades.strip() == "":
+                st.error("Por favor, describe las actividades realizadas antes de guardar.")
+            elif len(actividades.strip()) < 20:
+                st.error("Por favor describe las actividades con más detalle (mínimo 20 caracteres).")
+            elif hora_salida <= hora_entrada:
+                st.error("La hora de salida debe ser mayor a la hora de entrada.")
+            else:
+                url_evidencia = "Sin evidencia"
 
                 # Subida de imagen
                 if archivo_evidencia is not None:
@@ -161,7 +159,6 @@ with tab1:
 with tab2:
     st.write("### Área Exclusiva para Administrador")
 
-   
     contrasena_admin = st.secrets["ADMIN_PASSWORD"]
 
     if "pwd_admin" not in st.session_state:
