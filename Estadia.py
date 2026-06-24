@@ -23,12 +23,12 @@ def guardar_registro(fecha, hora_entrada, hora_salida, laboratorio, actividades,
     timestamp = datetime.now(tz_mexico).strftime("%Y-%m-%d %H:%M:%S")
     datos = {
         "fecha": fecha,
-        "hora_entrada": hora_entrada,
-        "hora_salida": hora_salida,
-        "laboratorio": laboratorio,
-        "actividades": actividades,
-        "evidencia": evidencia_url,
-        "timestamp_registro": timestamp
+        "hora_entrada": hora_entradaa,
+        "hora_salida": hora_salidaa,
+        "laboratorio": laboratorioo,
+        "actividades": actividadess,
+        "evidencia": evidencia_urll,
+        "timestamp_registro": timestampp
     }
     try:
         supabase.table("registros").insert(datos).execute()
