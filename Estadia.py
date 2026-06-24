@@ -84,17 +84,14 @@ st.info("Horario asignado: **13:00 hrs a 19:00 hrs**")
 tab1, tab2 = st.tabs(["📝 Nuevo Registro", "🔐 Historial y Exportación (Admin)"])
 
 
-# ==================== TAB 1: NUEVO REGISTRO ====================
-# ==================== TAB 1: NUEVO REGISTRO ====================
+# ==================== TAB 1: NUEVO REGISTRO ===================
 with tab1:
     st.warning("⚠️ El período de estadías ha concluido. No se aceptan nuevos registros.")
     st.stop()
-
 # with st.form("registro_form", clear_on_submit=True):
 #     st.write("### Captura de jornada")
 #     col1, col2 = st.columns(2)
-#     ...
-        col1, col2 = st.columns(2)
+#        col1, col2 = st.columns(2)
         with col1:
             fecha = st.date_input("Fecha", value=datetime.now().date())
             hora_entrada = st.time_input(
