@@ -86,7 +86,6 @@ tab1, tab2 = st.tabs(["📝 Nuevo Registro", "🔐 Historial y Exportación (Adm
 
 # ==================== TAB 1: NUEVO REGISTRO ====================
 with tab1:
-    with tab1:
     st.warning("⚠️ El período de estadías ha concluido. No se aceptan nuevos registros.")
     st.stop()
     #with st.form("registro_form", clear_on_submit=True):
