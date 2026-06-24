@@ -23,12 +23,12 @@ def guardar_registro(fecha, hora_entrada, hora_salida, laboratorio, actividades,
     timestamp = datetime.now(tz_mexico).strftime("%Y-%m-%d %H:%M:%S")
     datos = {
         "fecha": fecha,
-        "hora_entrada": hora_entradaa,
-        "hora_salida": hora_salidaa,
-        "laboratorio": laboratorioo,
-        "actividades": actividadess,
-        "evidencia": evidencia_urll,
-        "timestamp_registro": timestampp
+        "hora_entrada": hora_entrada,
+        "hora_salida": hora_salida,
+        "laboratorio": laboratorio,
+        "actividades": actividades,
+        "evidencia": evidencia_url,
+        "timestamp_registro": timestamp
     }
     try:
         supabase.table("registros").insert(datos).execute()
@@ -86,8 +86,11 @@ tab1, tab2 = st.tabs(["📝 Nuevo Registro", "🔐 Historial y Exportación (Adm
 
 # ==================== TAB 1: NUEVO REGISTRO ====================
 with tab1:
-    with st.form("registro_form", clear_on_submit=True):
-        st.write("### Captura de jornada")
+    with tab1:
+    st.warning("⚠️ El período de estadías ha concluido. No se aceptan nuevos registros.")
+    st.stop()
+    #with st.form("registro_form", clear_on_submit=True):
+        #st.write("### Captura de jornada")
 
         col1, col2 = st.columns(2)
         with col1:
