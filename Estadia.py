@@ -89,7 +89,7 @@ with tab1:
     st.warning("⚠️ El período de estadías ha concluido. No se aceptan nuevos registros.")
     st.stop()
     #with st.form("registro_form", clear_on_submit=True):
-        #st.write("### Captura de jornada")
+    #st.write("### Captura de jornada")
 
         col1, col2 = st.columns(2)
         with col1:
